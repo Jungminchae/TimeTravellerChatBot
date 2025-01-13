@@ -11,7 +11,7 @@ async def lifespan(app: FastAPI):
     """
     애플리케이션 시작 시 데이터베이스 테이블을 생성하는 lifespan 이벤트 핸들러
     """
-    create_tables()
+    await create_tables()
     yield
 
 

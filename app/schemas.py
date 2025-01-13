@@ -13,7 +13,7 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
-    @model_validator
+    @model_validator(mode="before")
     @classmethod
     def validate(cls, data):
         if len(data.username) < 4:

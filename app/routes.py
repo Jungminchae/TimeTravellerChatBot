@@ -4,12 +4,12 @@ from fastapi.responses import FileResponse
 from datetime import timedelta
 from app.database import DB
 from app.auth import (
-    verify_password,
     create_token,
     get_user_from_token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     REFRESH_TOKEN_EXPIRE_DAYS,
 )
+from app.utils import verify_password
 from app.schemas import (
     TokenRefresh,
     UserCreate,

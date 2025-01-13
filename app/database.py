@@ -3,7 +3,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./time_traveller.db"
+SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./time_traveller.db"
 
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
@@ -30,7 +30,7 @@ async def create_tables():
     모든 SQLAlchemy 모델에 대한 테이블을 생성함.
     이미 테이블이 존재하는 경우 아무 작업도 수행하지 않음.
     """
-    with engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 

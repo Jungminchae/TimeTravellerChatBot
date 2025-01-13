@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User, Session, Chat
 from app.schemas import UserCreate, SessionCreate
-from app.auth import get_hashed_password
+from app.utils import get_hashed_password
 
 
 class UserORM:
