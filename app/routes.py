@@ -22,7 +22,7 @@ from app.schemas import (
     ChatCreate,
     ChatResponse,
 )
-from app.models import UserModel
+from app.models import User
 from app.chat import ChatManager
 from app.orm import ORM
 
@@ -63,10 +63,10 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
         )
 
     orm = ORM(db)
-    if orm.check_username_exists(user.username):
+    if await orm.check_username_exists(user.username):
         raise HTTPException(status_code=409, detail="Username is already taken.")
 
-    new_user = orm.create_user(user)
+    new_user = await orm.create_user(user)
     return new_user
 
 
@@ -90,7 +90,7 @@ async def login(
     - 401: 잘못된 사용자명이나 비밀번호
     """
     orm = ORM(db)
-    user = orm.get_user_by_username(form_data.username)
+    user = await orm.get_user_by_username(form_data.username)
     if (
         not user
         or not form_data.password
@@ -146,7 +146,7 @@ async def refresh_token(
 @router.post("/session", response_model=SessionCreateResponse)
 async def create_session(
     session_create_data: SessionCreate,
-    user: UserModel = Depends(get_user_from_token),
+    user: User = Depends(get_user_from_token),
     db: Session = Depends(get_db),
 ):
     """
@@ -161,13 +161,13 @@ async def create_session(
     - id: 세션 ID
     """
     orm = ORM(db)
-    new_session = orm.create_session(session_create_data, user.id)
+    new_session = await orm.create_session(session_create_data, user.id)
     return new_session
 
 
 @router.get("/session", response_model=list[SessionResponse])
 async def get_sessions(
-    user: UserModel = Depends(get_user_from_token), db: Session = Depends(get_db)
+    user: User = Depends(get_user_from_token), db: Session = Depends(get_db)
 ):
     """
     현재 사용자의 모든 채팅 세션을 가져오는 엔드포인트
@@ -179,14 +179,14 @@ async def get_sessions(
     - persona: 가상인물의 인물 정보
     """
     orm = ORM(db)
-    sessions = orm.get_sessions_by_user(user.id)
+    sessions = await orm.get_sessions_by_user(user.id)
     return sessions
 
 
 @router.get("/introduction/{session_id}", response_model=ChatResponse)
 async def get_introduction(
     session_id: int,
-    user: UserModel = Depends(get_user_from_token),
+    user: User = Depends(get_user_from_token),
     db: Session = Depends(get_db),
 ):
     """
@@ -200,7 +200,7 @@ async def get_introduction(
     - answer: 가상인물의 자기소개 문구
     """
     chat_manager = ChatManager(session_id, db)
-    _, introduction = chat_manager.get_introduction()
+    _, introduction = await chat_manager.get_introduction()
     return {"question": "", "answer": introduction}
 
 
@@ -208,7 +208,7 @@ async def get_introduction(
 async def chat(
     session_id: int,
     chat_create_data: ChatCreate,
-    user: UserModel = Depends(get_user_from_token),
+    user: User = Depends(get_user_from_token),
     db: Session = Depends(get_db),
 ):
     """
@@ -225,8 +225,8 @@ async def chat(
     chat_manager = ChatManager(session_id, db)
     question, answer = chat_manager.get_answer(chat_create_data.question)
     orm = ORM(db)
-    orm.create_chat(session_id, question, answer)
-    chats = orm.get_chats_by_session(session_id)
+    await orm.create_chat(session_id, question, answer)
+    chats = await orm.get_chats_by_session(session_id)
     chat_list = [{"question": chat.question, "answer": chat.answer} for chat in chats]
     return chat_list
 
@@ -234,7 +234,7 @@ async def chat(
 @router.get("/chat/{session_id}", response_model=list[ChatResponse])
 async def get_chats(
     session_id: int,
-    user: UserModel = Depends(get_user_from_token),
+    user: User = Depends(get_user_from_token),
     db: Session = Depends(get_db),
 ):
     """
@@ -247,6 +247,6 @@ async def get_chats(
     - answer: 가상인물의 답변 메시지
     """
     orm = ORM(db)
-    chats = orm.get_chats_by_session(session_id)
+    chats = await orm.get_chats_by_session(session_id)
     chat_list = [{"question": chat.question, "answer": chat.answer} for chat in chats]
     return chat_list

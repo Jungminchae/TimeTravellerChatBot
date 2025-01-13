@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
-from .database import Base
+from app.database import Base
 
 
-class UserModel(Base):
+class User(Base):
     """
     사용자 정보를 저장하는 모델
 
@@ -20,15 +20,15 @@ class UserModel(Base):
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    sessions = relationship(
-        "SessionModel", back_populates="user", cascade="all, delete-orphan"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String)
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session", back_populates="user", cascade="all, delete-orphan"
     )
 
 
-class SessionModel(Base):
+class Session(Base):
     """
     대화 세션 정보를 저장하는 모델
 
@@ -41,26 +41,30 @@ class SessionModel(Base):
         created_at (datetime): 세션 생성 시간
 
     Relationships:
-        - user: 다대일 관계로 UserModel과 연결됨
-        - chats: 일대다 관계로 ChatModel과 연결됨
+        - user: 다대일 관계로 User과 연결됨
+        - chats: 일대다 관계로 Chat과 연결됨
     """
 
     __tablename__ = "sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
-    year = Column(Integer)
-    location = Column(String)
-    persona = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE")
+    )
+    year: Mapped[int] = mapped_column(Integer)
+    location: Mapped[str] = mapped_column(String)
+    persona: Mapped[str] = mapped_column(String)
+    created_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
-    user = relationship("UserModel", back_populates="sessions")
-    chats = relationship(
-        "ChatModel", back_populates="session", cascade="all, delete-orphan"
+    user: Mapped[User] = relationship("UserModel", back_populates="sessions")
+    chats: Mapped[list["Chat"]] = relationship(
+        "Chat", back_populates="session", cascade="all, delete-orphan"
     )
 
 
-class ChatModel(Base):
+class Chat(Base):
     """
     개별 대화 내용을 저장하는 모델
 
@@ -72,15 +76,19 @@ class ChatModel(Base):
         created_at (datetime): 대화 생성 시간
 
     Relationships:
-        - session: 다대일 관계로 SessionModel과 연결됨
+        - session: 다대일 관계로 Session과 연결됨
     """
 
     __tablename__ = "chats"
 
-    id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"))
-    question = Column(String)
-    answer = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    session_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("sessions.id", ondelete="CASCADE")
+    )
+    question: Mapped[str] = mapped_column(String)
+    answer: Mapped[str] = mapped_column(String)
+    created_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
-    session = relationship("SessionModel", back_populates="chats")
+    session: Mapped["Session"] = relationship("Session", back_populates="chats")

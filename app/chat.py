@@ -1,7 +1,7 @@
-from dataclasses import dataclass
-
-from .orm import ORM
+import asyncio
 import requests
+from dataclasses import dataclass
+from app.orm import ORM
 
 URL_ENDPOINT = "https://open-api.jejucodingcamp.workers.dev/"
 
@@ -54,12 +54,12 @@ class ChatManager:
         self.session_id = session_id
         self.orm = ORM(db)
         self.url_endpoint = URL_ENDPOINT
-        self.chat_history = self.gather_chat_history()
+        self.chat_history = asyncio.run(self.gather_chat_history())
 
-    def gather_chat_history(self):
+    async def gather_chat_history(self):
         """Session에 속한 모든 Chat의 질문과 대답을 Message로 변환하여 ChatHistory 객체로 통합하기"""
 
-        session = self.orm.get_session_by_id(self.session_id)
+        session = await self.orm.get_session_by_id(self.session_id)
         chat_history = ChatHistory()
         if session:
             chat_list = session.chats
@@ -95,7 +95,7 @@ class ChatManager:
         answer = self.send_question_with_history()
         return answer
 
-    def get_introduction(self):
+    async def get_introduction(self):
         """ChatGPT가 수행할 역할을 설정하고, 자기소개 멘트를 확보하기"""
 
         def _make_introduction_prompt_message(year, location, persona):
@@ -110,7 +110,7 @@ class ChatManager:
             )
             return prompt
 
-        session = self.orm.get_session_by_id(self.session_id)
+        session = await self.orm.get_session_by_id(self.session_id)
         chat_list = session.chats
         if len(chat_list) > 0:
             chat = chat_list[0]
@@ -122,7 +122,7 @@ class ChatManager:
         introduction = self.add_question_into_history_and_get_answer(
             role="system", question=introduction_prompt
         )
-        self.orm.create_chat(self.session_id, introduction_prompt, introduction)
+        await self.orm.create_chat(self.session_id, introduction_prompt, introduction)
         return introduction_prompt, introduction
 
     def get_answer(self, question):
