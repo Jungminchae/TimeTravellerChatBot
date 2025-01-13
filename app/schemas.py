@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class UserCreate(BaseModel):
@@ -12,6 +12,16 @@ class UserCreate(BaseModel):
 
     username: str
     password: str
+
+    @model_validator
+    @classmethod
+    def validate(cls, data):
+        if len(data.username) < 4:
+            raise ValueError("Username must be at least 4 characters long.")
+
+        if len(data.password) < 6:
+            raise ValueError("Password must be at least 6 characters long.")
+        return data
 
 
 class UserCreateResposne(BaseModel):
