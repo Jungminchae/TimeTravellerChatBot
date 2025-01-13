@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
 from datetime import timedelta
-from app.database import get_db
+from app.database import DB
 from app.auth import (
     verify_password,
     create_token,
@@ -36,7 +35,7 @@ def read_root():
 
 
 @router.post("/signup", response_model=UserCreateResposne)
-async def signup(user: UserCreate, db: Session = Depends(get_db)):
+async def signup(user: UserCreate, db: DB):
     """
     새로운 사용자를 등록하는 엔드포인트
 
@@ -72,7 +71,8 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    db: DB,
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     """
     사용자 로그인을 처리하는 엔드포인트
@@ -112,9 +112,7 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(
-    token_refresh_data: TokenRefresh, db: Session = Depends(get_db)
-):
+async def refresh_token(token_refresh_data: TokenRefresh, db: DB):
     """
     사용자의 리프레시 토큰을 사용하여 새로운 토큰 세트를 발급하는 엔드포인트
 
@@ -145,9 +143,9 @@ async def refresh_token(
 
 @router.post("/session", response_model=SessionCreateResponse)
 async def create_session(
+    db: DB,
     session_create_data: SessionCreate,
     user: User = Depends(get_user_from_token),
-    db: Session = Depends(get_db),
 ):
     """
     ChatGPT와의 새로운 채팅 세션을 생성하는 엔드포인트
@@ -167,7 +165,8 @@ async def create_session(
 
 @router.get("/session", response_model=list[SessionResponse])
 async def get_sessions(
-    user: User = Depends(get_user_from_token), db: Session = Depends(get_db)
+    db: DB,
+    user: User = Depends(get_user_from_token),
 ):
     """
     현재 사용자의 모든 채팅 세션을 가져오는 엔드포인트
@@ -185,9 +184,9 @@ async def get_sessions(
 
 @router.get("/introduction/{session_id}", response_model=ChatResponse)
 async def get_introduction(
+    db: DB,
     session_id: int,
     user: User = Depends(get_user_from_token),
-    db: Session = Depends(get_db),
 ):
     """
     특정 세션에 해당되는 가상인물의 자기소개 문구를 가져오는 엔드포인트
@@ -206,10 +205,10 @@ async def get_introduction(
 
 @router.post("/chat/{session_id}", response_model=list[ChatResponse])
 async def chat(
+    db: DB,
     session_id: int,
     chat_create_data: ChatCreate,
     user: User = Depends(get_user_from_token),
-    db: Session = Depends(get_db),
 ):
     """
     ChatGPT에 새로운 질문 메시지를 전송하고 모든 질문과 답변의 기록을 반환하는 엔드포인트
@@ -233,9 +232,9 @@ async def chat(
 
 @router.get("/chat/{session_id}", response_model=list[ChatResponse])
 async def get_chats(
+    db: DB,
     session_id: int,
     user: User = Depends(get_user_from_token),
-    db: Session = Depends(get_db),
 ):
     """
     특정 세션의 모든 대화 내역을 가져오는 엔드포인트

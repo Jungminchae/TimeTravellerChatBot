@@ -1,4 +1,6 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from typing import Annotated
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./time_traveller.db"
@@ -53,3 +55,6 @@ async def get_db():
         yield db
     finally:
         await db.close()
+
+
+DB = Annotated[AsyncSession, Depends(get_db)]

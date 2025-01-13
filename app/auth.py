@@ -1,17 +1,17 @@
+import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 from jose import jwt, JWTError
-import os
-from .database import get_db
-from .models import UserModel
+from app.database import get_db
+from app.orm import ORM
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "test_secret_key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -88,8 +88,8 @@ def verify_token(token: str):
         return None
 
 
-def get_user_from_token(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+async def get_user_from_token(
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
 ):
     """
     JWT 토큰으로부터 현재 인증된 사용자를 조회
@@ -119,7 +119,8 @@ def get_user_from_token(
     username = payload.get("sub")
     if username is None:
         raise credentials_exception
-    user = db.query(UserModel).filter(UserModel.username == username).first()
+    orm = ORM(db)
+    user = await orm.get_user_by_username(username)
     if user is None:
         raise credentials_exception
     return user
